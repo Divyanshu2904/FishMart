@@ -1,0 +1,287 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Ocean-inspired color palette */
+    --background: 200 20% 98%;
+    --foreground: 210 40% 15%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 15%;
+    
+    --primary: 205 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 175 65% 45%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 200 15% 92%;
+    --muted-foreground: 210 20% 45%;
+    
+    --accent: 145 65% 42%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 200 20% 88%;
+    --input: 200 20% 88%;
+    --ring: 205 85% 45%;
+    
+    --radius: 0.75rem;
+    
+    /* Custom tokens */
+    --ocean-deep: 210 80% 30%;
+    --ocean-mid: 205 85% 45%;
+    --ocean-light: 195 80% 65%;
+    --aqua: 175 65% 45%;
+    --aqua-light: 175 60% 75%;
+    --fresh-green: 145 65% 42%;
+    --fresh-green-light: 145 55% 65%;
+    --sand: 40 30% 92%;
+    --coral: 15 75% 60%;
+    
+    /* Glassmorphism */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.3;
+    --glass-blur: 16px;
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(210 40% 15% / 0.08);
+    --shadow-md: 0 8px 24px -8px hsl(210 40% 15% / 0.12);
+    --shadow-lg: 0 16px 48px -16px hsl(210 40% 15% / 0.16);
+    --shadow-glow: 0 0 40px hsl(205 85% 45% / 0.25);
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 40% 15%;
+    --sidebar-primary: 205 85% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 200 15% 95%;
+    --sidebar-accent-foreground: 210 40% 15%;
+    --sidebar-border: 200 20% 88%;
+    --sidebar-ring: 205 85% 45%;
+  }
+
+  .dark {
+    --background: 210 40% 8%;
+    --foreground: 200 20% 95%;
+    
+    --card: 210 35% 12%;
+    --card-foreground: 200 20% 95%;
+    
+    --popover: 210 35% 12%;
+    --popover-foreground: 200 20% 95%;
+    
+    --primary: 205 85% 55%;
+    --primary-foreground: 210 40% 8%;
+    
+    --secondary: 175 65% 50%;
+    --secondary-foreground: 210 40% 8%;
+    
+    --muted: 210 30% 18%;
+    --muted-foreground: 200 15% 60%;
+    
+    --accent: 145 65% 50%;
+    --accent-foreground: 210 40% 8%;
+    
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 210 30% 22%;
+    --input: 210 30% 22%;
+    --ring: 205 85% 55%;
+    
+    --ocean-deep: 210 70% 45%;
+    --ocean-mid: 205 80% 55%;
+    --ocean-light: 195 75% 70%;
+    --aqua: 175 60% 55%;
+    --aqua-light: 175 55% 75%;
+    --fresh-green: 145 60% 50%;
+    --fresh-green-light: 145 50% 70%;
+    --sand: 40 15% 20%;
+    --coral: 15 70% 55%;
+    
+    --glass-bg: 210 35% 12% / 0.8;
+    --glass-border: 0 0% 100% / 0.1;
+    
+    --sidebar-background: 210 35% 10%;
+    --sidebar-foreground: 200 20% 95%;
+    --sidebar-primary: 205 85% 55%;
+    --sidebar-primary-foreground: 210 40% 8%;
+    --sidebar-accent: 210 30% 18%;
+    --sidebar-accent-foreground: 200 20% 95%;
+    --sidebar-border: 210 30% 22%;
+    --sidebar-ring: 205 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-xl border border-white/20 shadow-lg;
+  }
+  
+  .glass-card-solid {
+    @apply bg-card backdrop-blur-xl border border-border shadow-lg;
+  }
+  
+  /* Product card hover effect */
+  .product-card {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .product-card:hover {
+    @apply -translate-y-2 shadow-xl;
+  }
+  
+  .product-card:hover .product-image {
+    @apply scale-110;
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-secondary to-aqua bg-clip-text text-transparent;
+  }
+  
+  /* Ocean gradient backgrounds */
+  .ocean-gradient {
+    @apply bg-gradient-to-br from-primary via-secondary to-aqua-light;
+  }
+  
+  .ocean-gradient-subtle {
+    @apply bg-gradient-to-br from-ocean-light/20 via-aqua-light/20 to-fresh-green-light/10;
+  }
+  
+  /* Button gradients */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-accent to-fresh-green hover:from-accent/90 hover:to-fresh-green/90;
+  }
+  
+  .btn-ocean {
+    @apply bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90;
+  }
+  
+  /* Wave animation container */
+  .wave-bg {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .wave-bg::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(180deg, transparent 0%, hsl(var(--ocean-light) / 0.1) 100%);
+    pointer-events: none;
+  }
+  
+  /* Freshness badge styles */
+  .badge-fresh {
+    @apply bg-accent/10 text-accent border border-accent/20;
+  }
+  
+  .badge-live {
+    @apply bg-secondary/10 text-secondary border border-secondary/20;
+  }
+  
+  .badge-frozen {
+    @apply bg-primary/10 text-primary border border-primary/20;
+  }
+  
+  /* Stats card */
+  .stats-card {
+    @apply glass-card-solid rounded-xl p-6 transition-all duration-300 hover:shadow-lg;
+  }
+  
+  /* Navigation active state */
+  .nav-link-active {
+    @apply text-primary font-semibold;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-float-delayed {
+    animation: float 6s ease-in-out 2s infinite;
+  }
+  
+  .animate-wave {
+    animation: wave 8s ease-in-out infinite;
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(-10px) translateY(5px);
+  }
+  50% {
+    transform: translateX(0) translateY(-5px);
+  }
+  75% {
+    transform: translateX(10px) translateY(5px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
