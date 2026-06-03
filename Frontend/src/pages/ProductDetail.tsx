@@ -3,20 +3,42 @@ import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Star, ShoppingCart, Check, ShieldCheck, Truck, Clock, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { products } from "@/data/products";
 import { getProductReviews } from "@/data/reviews";
 import { ReviewsSection } from "@/components/reviews/ReviewsSection";
 import { useCart } from "@/context/CartContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
-  const product = products.find(p => p.id === productId);
+  const [product, setProduct] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const reviews = getProductReviews(productId || "");
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${productId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProduct(data);
+        }
+      } catch (err) {
+        console.error('Error fetching product details:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
 
   const handleAddToCart = () => {
     if (product) {
@@ -27,6 +49,17 @@ const ProductDetail = () => {
       setTimeout(() => setAdded(false), 1500);
     }
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-ocean-50 to-background pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading product details...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!product) {
     return (

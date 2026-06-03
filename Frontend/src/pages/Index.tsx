@@ -1,9 +1,9 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ArrowRight, Truck, Shield, Clock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
-import { products } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 
 const HeroSection = () => (
@@ -75,28 +75,39 @@ const FeaturesSection = () => (
   </section>
 );
 
-const FeaturedProducts = () => (
-  <section className="py-20">
-    <div className="container mx-auto px-4">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Fresh Catch</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">Handpicked selection of the freshest fish from verified sellers across India</p>
+const FeaturedProducts = () => {
+  const [productsList, setProductsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/products')
+      .then((res) => res.json())
+      .then((data) => setProductsList(data.slice(0, 8)))
+      .catch((err) => console.error('Error fetching featured products:', err));
+  }, []);
+
+  return (
+    <section className="py-20">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Fresh Catch</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">Handpicked selection of the freshest fish from verified sellers across India</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {productsList.map((product, i) => (
+            <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <ProductCard product={product} />
+            </motion.div>
+          ))}
+        </div>
+        <div className="text-center mt-12">
+          <Button size="lg" className="btn-ocean text-primary-foreground" asChild>
+            <Link to="/marketplace">View All Products <ArrowRight className="ml-2 w-5 h-5" /></Link>
+          </Button>
+        </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.slice(0, 8).map((product, i) => (
-          <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <ProductCard product={product} />
-          </motion.div>
-        ))}
-      </div>
-      <div className="text-center mt-12">
-        <Button size="lg" className="btn-ocean text-primary-foreground" asChild>
-          <Link to="/marketplace">View All Products <ArrowRight className="ml-2 w-5 h-5" /></Link>
-        </Button>
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const Index = () => (
   <main>

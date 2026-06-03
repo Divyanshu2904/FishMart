@@ -13,22 +13,51 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSellerById } from "@/data/sellers";
-import { products } from "@/data/products";
 import { getSellerReviews } from "@/data/reviews";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ReviewsSection } from "@/components/reviews/ReviewsSection";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const SellerProfile = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
-  const seller = getSellerById(sellerId || "");
+  const [seller, setSeller] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const sellerReviews = getSellerReviews(sellerId || "");
 
-  // Get products for this seller (mock: assign products based on seller index)
-  const sellerProducts = products.filter((_, index) => {
-    const sellerIndex = parseInt(sellerId?.split("-")[1] || "1") - 1;
-    return index % 4 === sellerIndex;
-  });
+  useEffect(() => {
+    const fetchSellerProfile = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:5000/api/seller/profile/${sellerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSeller(data);
+        }
+      } catch (err) {
+        console.error('Error fetching seller profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sellerId) {
+      fetchSellerProfile();
+    }
+  }, [sellerId]);
+
+  const sellerProducts = seller?.products || [];
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-ocean-50 to-background pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading seller profile...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!seller) {
     return (

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, Grid3X3, List } from 'lucide-react';
+import { Search, SlidersHorizontal, Grid3X3, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { products, categories, locations } from '@/data/products';
+import { categories, locations } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 
 const Marketplace = () => {
@@ -12,14 +12,38 @@ const Marketplace = () => {
   const [category, setCategory] = useState('all');
   const [location, setLocation] = useState('All India');
   const [freshness, setFreshness] = useState('all');
+  const [productsList, setProductsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = category === 'all' || p.category === category;
-    const matchLocation = location === 'All India' || p.state === location;
-    const matchFreshness = freshness === 'all' || p.freshness === freshness;
-    return matchSearch && matchCategory && matchLocation && matchFreshness;
-  });
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams();
+        if (category && category !== 'all') queryParams.append('category', category);
+        if (freshness && freshness !== 'all') queryParams.append('freshness', freshness);
+        if (location && location !== 'All India') queryParams.append('state', location);
+        if (search) queryParams.append('search', search);
+
+        const res = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProductsList(data);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Add a small debounce for search input to prevent spamming queries
+    const delayDebounceFn = setTimeout(() => {
+      fetchProducts();
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [category, freshness, location, search]);
 
   return (
     <main className="min-h-screen pt-24 pb-16">
@@ -58,21 +82,32 @@ const Marketplace = () => {
 
         {/* Results */}
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-muted-foreground">{filtered.length} products found</p>
+          <p className="text-muted-foreground">
+            {loading ? 'Searching...' : `${productsList.length} products found`}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filtered.map((product, i) => (
-            <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-              <ProductCard product={product} />
-            </motion.div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-xl text-muted-foreground">No fish found matching your criteria</p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-muted-foreground">Fetching fresh fish from our database...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {productsList.map((product, i) => (
+                <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+
+            {productsList.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-xl text-muted-foreground">No fish found matching your criteria</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Package, CheckCircle, Truck, Home, ArrowLeft, MapPin, Calendar, Clock } from "lucide-react";
+import { Package, CheckCircle, Truck, Home, ArrowLeft, MapPin, Calendar, Clock, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 interface OrderStatus {
   id: string;
@@ -21,25 +21,6 @@ interface OrderStatus {
   }[];
 }
 
-const sampleOrder: OrderStatus = {
-  id: "FM-2024-001234",
-  status: "shipped",
-  orderDate: "December 25, 2024",
-  estimatedDelivery: "December 28, 2024",
-  items: [
-    { name: "Fresh Rohu Fish", quantity: 2, price: 280 },
-    { name: "Live Prawns", quantity: 1, price: 450 },
-    { name: "Salmon Fillet", quantity: 1, price: 890 },
-  ],
-  shippingAddress: "123 Marine Drive, Mumbai, Maharashtra 400001",
-  timeline: [
-    { status: "Order Placed", date: "Dec 25", time: "10:30 AM", completed: true, current: false },
-    { status: "Order Confirmed", date: "Dec 25", time: "11:15 AM", completed: true, current: false },
-    { status: "Shipped", date: "Dec 26", time: "09:00 AM", completed: true, current: true },
-    { status: "Delivered", date: "Dec 28", time: "Expected", completed: false, current: false },
-  ],
-};
-
 const statusIcons = {
   "Order Placed": Package,
   "Order Confirmed": CheckCircle,
@@ -48,14 +29,47 @@ const statusIcons = {
 };
 
 const OrderTracking = () => {
-  const [orderId, setOrderId] = useState("");
-  const [order, setOrder] = useState<OrderStatus | null>(sampleOrder);
-  const [isTracking, setIsTracking] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryOrderId = searchParams.get("orderId") || "";
+
+  const [orderId, setOrderId] = useState(queryOrderId);
+  const [order, setOrder] = useState<OrderStatus | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const trackOrder = async (id: string) => {
+    setLoading(true);
+    setError("");
+    setIsTracking(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/track/${id}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Order not found");
+      }
+      setOrder(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to find order tracking info");
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (queryOrderId) {
+      setOrderId(queryOrderId);
+      trackOrder(queryOrderId);
+    } else {
+      setIsTracking(false);
+      setOrder(null);
+    }
+  }, [queryOrderId]);
 
   const handleTrackOrder = () => {
     if (orderId.trim()) {
-      setIsTracking(true);
-      setOrder(sampleOrder);
+      setSearchParams({ orderId: orderId.trim() });
     }
   };
 
@@ -96,19 +110,44 @@ const OrderTracking = () => {
         >
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
-              placeholder="Enter Order ID (e.g., FM-2024-001234)"
+              placeholder="Enter Order ID (e.g., FM-2026-001234)"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
-              className="flex-1 bg-white/50 border-ocean-200 focus:border-ocean-400"
+              onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
+              className="flex-1 bg-white/50 border-ocean-200 focus:border-ocean-400 font-mono text-lg"
             />
-            <Button onClick={handleTrackOrder} className="bg-fresh-500 hover:bg-fresh-600 text-white">
+            <Button onClick={handleTrackOrder} className="bg-fresh-500 hover:bg-fresh-600 text-white" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Track Order
             </Button>
           </div>
         </motion.div>
 
+        {/* Loading Spinner */}
+        {loading && (
+          <div className="text-center py-16">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Retrieving tracking records...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-6 mb-8 flex items-start gap-3"
+          >
+            <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-lg mb-1">Tracking Error</h3>
+              <p className="text-sm">{error}. Please make sure you entered the correct Order ID.</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Order Details */}
-        {isTracking && order && (
+        {isTracking && order && !loading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -119,11 +158,11 @@ const OrderTracking = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                 <div>
                   <p className="text-sm text-muted-foreground">Order ID</p>
-                  <p className="text-xl font-bold text-ocean-700">{order.id}</p>
+                  <p className="text-xl font-mono font-bold text-ocean-700">{order.id}</p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center gap-2">
-                  <span className="px-4 py-2 rounded-full bg-ocean-100 text-ocean-700 font-medium text-sm">
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  <span className="px-4 py-2 rounded-full bg-ocean-100 text-ocean-700 font-medium text-sm capitalize">
+                    {order.status}
                   </span>
                 </div>
               </div>
@@ -139,7 +178,7 @@ const OrderTracking = () => {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="w-4 h-4 text-ocean-500" />
-                  <span className="truncate">{order.shippingAddress}</span>
+                  <span className="truncate" title={order.shippingAddress}>{order.shippingAddress}</span>
                 </div>
               </div>
             </div>
@@ -203,7 +242,7 @@ const OrderTracking = () => {
                             {step.status}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {step.date} • {step.time}
+                            {step.date ? `${step.date} ${step.time ? `• ${step.time}` : ''}` : 'Pending'}
                           </p>
                         </div>
                       </motion.div>
@@ -234,14 +273,14 @@ const OrderTracking = () => {
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       </div>
                     </div>
-                    <p className="font-semibold text-ocean-700">₹{item.price * item.quantity}</p>
+                    <p className="font-semibold text-ocean-700">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
                   </motion.div>
                 ))}
               </div>
               <div className="mt-6 pt-4 border-t border-ocean-200 flex justify-between items-center">
                 <span className="font-medium text-foreground">Total Amount</span>
                 <span className="text-xl font-bold text-ocean-700">
-                  ₹{order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)}
+                  ₹{order.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

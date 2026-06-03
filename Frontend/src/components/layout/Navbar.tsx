@@ -1,23 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Fish, Menu, X, ShoppingCart, User, LogIn } from 'lucide-react';
+import { Fish, Menu, X, ShoppingCart, User, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-
-const navLinks = [
-  { name: 'Home', path: '/' },
-  { name: 'Marketplace', path: '/marketplace' },
-  { name: 'Seller Dashboard', path: '/seller' },
-  { name: 'About', path: '/about' },
-];
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { totalItems, setIsCartOpen } = useCart();
+  const { user, logout } = useAuth();
+
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Marketplace', path: '/marketplace' },
+    ...(user?.role === 'seller' ? [{ name: 'Seller Dashboard', path: '/seller' }] : []),
+    { name: 'About', path: '/about' },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,15 +99,32 @@ export const Navbar = () => {
               </Button>
 
               <div className="hidden sm:flex items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/login">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Login
-                  </Link>
-                </Button>
-                <Button size="sm" className="btn-gradient text-accent-foreground" asChild>
-                  <Link to="/signup">Sign Up</Link>
-                </Button>
+                {user ? (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                      <User className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">
+                        {user.name}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={logout}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/login">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Login
+                      </Link>
+                    </Button>
+                    <Button size="sm" className="btn-gradient text-accent-foreground" asChild>
+                      <Link to="/signup">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Mobile Menu Toggle */}
@@ -149,17 +168,31 @@ export const Navbar = () => {
                       {link.name}
                     </Link>
                   ))}
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                    <Button variant="outline" className="flex-1" asChild>
-                      <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        Login
-                      </Link>
-                    </Button>
-                    <Button className="flex-1 btn-gradient text-accent-foreground" asChild>
-                      <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                        Sign Up
-                      </Link>
-                    </Button>
+                  <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
+                    {user ? (
+                      <>
+                        <div className="px-4 py-2 text-sm text-muted-foreground">
+                          Logged in as <strong className="text-foreground">{user.name}</strong>
+                        </div>
+                        <Button variant="outline" className="w-full" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1" asChild>
+                          <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                            Login
+                          </Link>
+                        </Button>
+                        <Button className="flex-1 btn-gradient text-accent-foreground" asChild>
+                          <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                            Sign Up
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
