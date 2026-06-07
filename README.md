@@ -1,5 +1,9 @@
 # 🐟 FishMart - Fresh Fish Marketplace
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-brightgreen?style=for-the-badge&logo=vercel)](https://fishmart-demo.vercel.app/)
+
+🔗 **Live Demo Link:** [https://fishmart-demo.vercel.app/](https://fishmart-demo.vercel.app/)
+
 FishMart is a complete, modern, and decentralized e-commerce platform that connects local fishermen and verified fish sellers directly with buyers across India. By eliminating middle-agents, FishMart ensures buyers get the freshest catch at the best prices while helping local fisheries earn fair margins.
 
 ---
