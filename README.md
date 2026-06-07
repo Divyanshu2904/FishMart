@@ -38,7 +38,7 @@ FishMart is a complete, modern, and decentralized e-commerce platform that conne
 |---|---|---|
 | **Frontend** | React.js, TypeScript, Vite | Tailwind CSS, Framer Motion, Lucide Icons, Radix UI (Shadcn) |
 | **Backend** | Node.js, Express.js | CORS, Dotenv, JSONWebToken, BcryptJS |
-| **Database** | SQLite3 | Native Promise-based wrapper |
+| **Database** | PostgreSQL | Native Promise-based wrapper |
 
 ---
 
