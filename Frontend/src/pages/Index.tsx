@@ -3,58 +3,77 @@ import { motion } from 'framer-motion';
 import { Search, ArrowRight, Truck, Shield, Clock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ProductCard } from '@/components/products/ProductCard';
 import { products as mockProducts } from '@/data/products';
 
-const HeroSection = () => (
-  <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/5 via-secondary/5 to-aqua-light/10">
-    {/* Animated background elements */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-aqua/5 rounded-full blur-3xl" />
-      {/* Fish silhouettes */}
-      <motion.div animate={{ x: [0, 100, 0], y: [0, -20, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute top-1/4 left-1/4 text-6xl opacity-10">🐟</motion.div>
-      <motion.div animate={{ x: [0, -80, 0], y: [0, 30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute bottom-1/3 right-1/4 text-5xl opacity-10">🐠</motion.div>
-    </div>
+const HeroSection = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
-    <div className="container mx-auto px-4 pt-24 pb-16 relative z-10">
-      <div className="max-w-4xl mx-auto text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
-            🐟 India's #1 Fish Marketplace
-          </span>
-        </motion.div>
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/marketplace');
+    }
+  };
 
-        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-          Fresh Fish Marketplace
-          <span className="block gradient-text">Direct from Sellers to Buyers</span>
-        </motion.h1>
-
-        <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Connect with local fishermen and verified sellers for the freshest catch. Quality guaranteed, delivered to your doorstep.
-        </motion.p>
-
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder="Search fish by name or location" className="pl-12 h-14 text-lg bg-card/80 backdrop-blur border-border/50" />
-          </div>
-          <Button size="lg" className="h-14 px-8 btn-gradient text-accent-foreground" asChild>
-            <Link to="/marketplace">Explore Fresh Fish <ArrowRight className="ml-2 w-5 h-5" /></Link>
-          </Button>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-wrap justify-center gap-4">
-          <Button variant="outline" size="lg" className="h-12" asChild>
-            <Link to="/seller">Become a Seller</Link>
-          </Button>
-        </motion.div>
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/5 via-secondary/5 to-aqua-light/10">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-aqua/5 rounded-full blur-3xl" />
+        {/* Fish silhouettes */}
+        <motion.div animate={{ x: [0, 100, 0], y: [0, -20, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute top-1/4 left-1/4 text-6xl opacity-10">🐟</motion.div>
+        <motion.div animate={{ x: [0, -80, 0], y: [0, 30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute bottom-1/3 right-1/4 text-5xl opacity-10">🐠</motion.div>
       </div>
-    </div>
-  </section>
-);
+
+      <div className="container mx-auto px-4 pt-24 pb-16 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
+              🐟 India's #1 Fish Marketplace
+            </span>
+          </motion.div>
+
+          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            Fresh Fish Marketplace
+            <span className="block gradient-text">Direct from Sellers to Buyers</span>
+          </motion.h1>
+
+          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Connect with local fishermen and verified sellers for the freshest catch. Quality guaranteed, delivered to your doorstep.
+          </motion.p>
+
+          <motion.form onSubmit={handleSearchSubmit} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mb-8">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input 
+                placeholder="Search fish by name or location" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-14 text-lg bg-card/80 backdrop-blur border-border/50" 
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-14 px-8 btn-gradient text-accent-foreground">
+              Explore Fresh Fish <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.form>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-wrap justify-center gap-4">
+            <Button variant="outline" size="lg" className="h-12" asChild>
+              <Link to="/seller">Become a Seller</Link>
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const FeaturesSection = () => (
   <section className="py-16 bg-card">

@@ -15,44 +15,81 @@ const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const reviews = getProductReviews(productId || "");
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/product/${productId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviewsList(data);
+      } else {
+        throw new Error('Reviews API failed');
+      }
+    } catch (err) {
+      console.warn('Error fetching reviews, using mock data:', err);
+      setReviewsList(getProductReviews(productId || ""));
+    }
+  };
+
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
-      try {
-        const res = await fetch(`http://localhost:5000/api/products/${productId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setProduct(data);
-        } else {
-          throw new Error('API failed');
+      
+      const loadProductData = async (lat?: number, lon?: number) => {
+        try {
+          let url = `http://localhost:5000/api/products/${productId}`;
+          if (lat !== undefined && lon !== undefined) {
+            url += `?userLat=${lat}&userLon=${lon}`;
+          }
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            setProduct(data);
+          } else {
+            throw new Error('API failed');
+          }
+        } catch (err) {
+          console.error('Error fetching product details, falling back to mock:', err);
+          const localProd = mockProducts.find(p => p.id === productId);
+          if (localProd) {
+            const fallbackSeller = {
+              id: localProd.sellerId || "s1",
+              name: "Bengal Fresh Fish",
+              rating: 4.8,
+              verified: true
+            };
+            setProduct({
+              ...localProd,
+              seller: localProd.seller || fallbackSeller
+            });
+          }
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('Error fetching product details, falling back to mock:', err);
-        const localProd = mockProducts.find(p => p.id === productId);
-        if (localProd) {
-          const fallbackSeller = {
-            id: localProd.sellerId || "s1",
-            name: "Bengal Fresh Fish",
-            rating: 4.8,
-            verified: true
-          };
-          setProduct({
-            ...localProd,
-            seller: localProd.seller || fallbackSeller
-          });
-        }
-      } finally {
-        setLoading(false);
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            loadProductData(pos.coords.latitude, pos.coords.longitude);
+          },
+          () => {
+            loadProductData();
+          },
+          { timeout: 3000 }
+        );
+      } else {
+        loadProductData();
       }
     };
 
     if (productId) {
       fetchProduct();
+      fetchReviews();
     }
   }, [productId]);
 
@@ -154,7 +191,7 @@ const ProductDetail = () => {
                 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
                 <span className="font-bold text-amber-700">{product.seller.rating}</span>
               </div>
-              <span className="text-muted-foreground">({reviews.length} reviews)</span>
+              <span className="text-muted-foreground">({reviewsList.length} reviews)</span>
             </div>
 
             {/* Price */}
@@ -162,6 +199,29 @@ const ProductDetail = () => {
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-ocean-600">₹{product.price}</span>
                 <span className="text-lg text-muted-foreground">/{product.unit}</span>
+              </div>
+              
+              {/* Delivery Availability Badge */}
+              <div className="mt-3">
+                {product.distance !== undefined ? (
+                  product.distance < 50 ? (
+                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      🟢 Fast Delivery Available (within 2 hours)
+                    </Badge>
+                  ) : product.distance < 150 ? (
+                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      🟢 Same Day Delivery Available
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
+                      🚚 Next Day Delivery (Distance: {product.distance} km)
+                    </Badge>
+                  )
+                ) : (
+                  <Badge className="bg-ocean-50 text-ocean-700 border border-ocean-200">
+                    🟢 Delivery available in your area
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -181,7 +241,13 @@ const ProductDetail = () => {
                 <Truck className="w-5 h-5 text-ocean-500" />
                 <div>
                   <p className="text-xs text-muted-foreground">Delivery</p>
-                  <p className="font-medium text-foreground">Same Day</p>
+                  <p className="font-medium text-foreground">
+                    {product.distance !== undefined ? (
+                      product.distance < 50 ? "Same Day (2-4 hrs)" :
+                      product.distance < 150 ? "Same Day (6-8 hrs)" :
+                      "Next Day Delivery"
+                    ) : "Same Day Delivery"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -202,48 +268,72 @@ const ProductDetail = () => {
                       <ShieldCheck className="w-4 h-4 text-fresh-500" />
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">View Seller Profile</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-xs text-emerald-600 font-medium">Online</span>
+                  </div>
                 </div>
               </div>
               <ArrowLeft className="w-5 h-5 text-ocean-500 rotate-180" />
             </Link>
 
             {/* Quantity & Add to Cart */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center glass-card rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-3 text-lg font-semibold hover:bg-ocean-50 transition-colors"
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center glass-card rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-3 text-lg font-semibold hover:bg-ocean-50 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="px-6 py-3 font-semibold text-foreground">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-4 py-3 text-lg font-semibold hover:bg-ocean-50 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <Button
+                  onClick={handleAddToCart}
+                  size="lg"
+                  className={cn(
+                    "flex-1 text-lg py-6 transition-all",
+                    added ? "bg-fresh-500 hover:bg-fresh-600" : "bg-ocean-500 hover:bg-ocean-600"
+                  )}
                 >
-                  -
-                </button>
-                <span className="px-6 py-3 font-semibold text-foreground">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-3 text-lg font-semibold hover:bg-ocean-50 transition-colors"
-                >
-                  +
-                </button>
+                  {added ? (
+                    <>
+                      <Check className="w-5 h-5 mr-2" />
+                      Added to Cart!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Add to Cart
+                    </>
+                  )}
+                </Button>
               </div>
+
+              {/* WhatsApp Seller Button */}
               <Button
-                onClick={handleAddToCart}
+                variant="outline"
                 size="lg"
-                className={cn(
-                  "flex-1 text-lg py-6 transition-all",
-                  added ? "bg-fresh-500 hover:bg-fresh-600" : "bg-ocean-500 hover:bg-ocean-600"
-                )}
+                className="w-full border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-semibold flex items-center justify-center gap-2"
+                onClick={() => {
+                  const message = encodeURIComponent(`Hi, I am interested in purchasing "${product.name}" from FishMart. Is it available?`);
+                  window.open(`https://wa.me/919876543210?text=${message}`, '_blank');
+                }}
               >
-                {added ? (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Added to Cart!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Add to Cart
-                  </>
-                )}
+                <svg className="w-5 h-5 fill-emerald-600" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.97-1.861-1.868-4.339-2.897-6.97-2.899-5.443 0-9.87 4.384-9.874 9.815-.002 1.97.518 3.893 1.51 5.619l-.99 3.613 3.72-.961zm11.46-5.834c-.244-.122-1.443-.712-1.667-.794-.223-.081-.387-.122-.549.122-.162.244-.63.794-.772.955-.143.162-.285.183-.529.061-.244-.122-.962-.355-1.83-1.129-.675-.602-1.13-1.346-1.262-1.57-.132-.224-.014-.345.108-.466.11-.11.244-.285.366-.427.122-.142.162-.244.244-.407.081-.162.041-.305-.021-.427-.061-.122-.549-1.32-.752-1.81-.197-.475-.398-.411-.549-.419-.142-.007-.305-.008-.468-.008-.162 0-.427.061-.65.305-.224.244-.854.834-.854 2.035 0 1.201.874 2.36 1.006 2.532.132.172 1.72 2.628 4.167 3.682.583.251 1.038.4 1.393.513.585.186 1.117.16 1.538.097.469-.071 1.443-.59 1.647-1.16.203-.57.203-1.057.142-1.16-.061-.101-.223-.162-.467-.284z"/>
+                </svg>
+                Chat with Seller on WhatsApp
               </Button>
             </div>
           </motion.div>
@@ -257,10 +347,11 @@ const ProductDetail = () => {
         >
           <h2 className="text-2xl font-bold text-foreground mb-6">Customer Reviews</h2>
           <ReviewsSection
-            reviews={reviews}
+            reviews={reviewsList}
             type="product"
             targetId={product.id}
             targetName={product.name}
+            onReviewAdded={fetchReviews}
           />
         </motion.div>
       </div>

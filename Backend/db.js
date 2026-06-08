@@ -116,6 +116,22 @@ export const initDB = async () => {
     )
   `);
 
+  await run(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER,
+      seller_id INTEGER,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      title TEXT,
+      comment TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      helpful INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   // Seed default sellers and products if empty
   const userCount = await get('SELECT COUNT(*) as count FROM users');
   if (userCount.count === 0) {
@@ -274,6 +290,32 @@ export const initDB = async () => {
         [prod.name, prod.scientific_name, prod.price, prod.unit, prod.image, prod.location, prod.state, prod.freshness, prod.category, prod.description, prod.in_stock, sId]
       );
     }
+
+    // Seed default reviews
+    const seededProducts = await query('SELECT id, seller_id FROM products');
+    if (seededProducts && seededProducts.length > 0) {
+      const p1 = seededProducts[0]; // Rohu (Bengal Fresh Fish)
+      await run(
+        `INSERT INTO reviews (product_id, seller_id, rating, title, comment, author_name, helpful)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [p1.id, p1.seller_id, 5, 'Extremely fresh and tasty!', 'The Rohu was incredibly fresh, just as described. It arrived well-packed with ice. The taste was amazing in our fish curry. Will definitely order again!', 'Rajesh Kumar', 12]
+      );
+      await run(
+        `INSERT INTO reviews (product_id, seller_id, rating, title, comment, author_name, helpful)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [p1.id, p1.seller_id, 4, 'Good quality, slight delay', 'Fish quality was excellent and very fresh. However, delivery was delayed by a few hours. Overall satisfied with the purchase.', 'Priya Sharma', 8]
+      );
+
+      const p3 = seededProducts[2]; // Pomfret (Mumbai Sea Catch)
+      if (p3) {
+        await run(
+          `INSERT INTO reviews (product_id, seller_id, rating, title, comment, author_name, helpful)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [p3.id, p3.seller_id, 5, "Best Pomfret I've ever had!", 'Premium quality pomfret, exactly as shown in pictures. The seller was very responsive and helped me choose the right size. Highly recommended!', 'Amit Patel', 15]
+        );
+      }
+    }
+
     console.log('Database seeded successfully.');
   }
 };

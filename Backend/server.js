@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import orderRoutes from './routes/orders.js';
 import sellerRoutes from './routes/seller.js';
+import uploadRoutes from './routes/upload.js';
+import reviewsRoutes from './routes/reviews.js';
 
 // Load Env
 dotenv.config();
@@ -15,6 +17,9 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Serve uploads folder statically
+app.use('/uploads', express.static('uploads'));
 
 // Init Database
 initDB()
@@ -35,6 +40,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/seller', sellerRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

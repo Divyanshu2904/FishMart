@@ -66,7 +66,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-ocean-600 transition-colors"
           >
             <MapPin className="w-3.5 h-3.5" />
-            <span>{product.location}</span>
+            <span>{product.location} {product.distance !== undefined && `(${product.distance} km)`}</span>
           </Link>
           <div className="flex items-center gap-1 text-sm">
             <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />

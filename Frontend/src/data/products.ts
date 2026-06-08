@@ -18,6 +18,7 @@ export interface Product {
   description: string;
   inStock: boolean;
   weight?: string;
+  distance?: number;
 }
 
 export const products: Product[] = [

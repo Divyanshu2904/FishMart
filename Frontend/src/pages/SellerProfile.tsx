@@ -25,7 +25,22 @@ const SellerProfile = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
   const [seller, setSeller] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const sellerReviews = getSellerReviews(sellerId || "");
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/seller/${sellerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviewsList(data);
+      } else {
+        throw new Error('Reviews API failed');
+      }
+    } catch (err) {
+      console.warn('Error fetching reviews, using mock data:', err);
+      setReviewsList(getSellerReviews(sellerId || ""));
+    }
+  };
 
   useEffect(() => {
     const fetchSellerProfile = async () => {
@@ -57,6 +72,7 @@ const SellerProfile = () => {
 
     if (sellerId) {
       fetchSellerProfile();
+      fetchReviews();
     }
   }, [sellerId]);
 
@@ -279,10 +295,11 @@ const SellerProfile = () => {
         >
           <h2 className="text-2xl font-bold text-foreground mb-6">Seller Reviews</h2>
           <ReviewsSection
-            reviews={sellerReviews}
+            reviews={reviewsList}
             type="seller"
             targetId={sellerId || ""}
             targetName={seller.name}
+            onReviewAdded={fetchReviews}
           />
         </motion.div>
       </div>
