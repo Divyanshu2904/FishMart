@@ -17,7 +17,7 @@ export const Navbar = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Marketplace', path: '/marketplace' },
-    ...(user?.role === 'seller' ? [{ name: 'Seller Dashboard', path: '/seller' }] : []),
+    { name: 'Seller Dashboard', path: '/seller' },
     { name: 'About', path: '/about' },
   ];
 

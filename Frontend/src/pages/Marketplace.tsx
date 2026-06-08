@@ -4,7 +4,7 @@ import { Search, SlidersHorizontal, Grid3X3, List, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories, locations } from '@/data/products';
+import { categories, locations, products as mockProducts } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 
 const Marketplace = () => {
@@ -28,10 +28,32 @@ const Marketplace = () => {
         const res = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          setProductsList(data);
+          if (data.length === 0) {
+            // If API returns empty array, show matching mock products instead
+            const localFiltered = mockProducts.filter((p) => {
+              const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+              const matchCategory = category === 'all' || p.category === category;
+              const matchLocation = location === 'All India' || p.state === location;
+              const matchFreshness = freshness === 'all' || p.freshness === freshness;
+              return matchSearch && matchCategory && matchLocation && matchFreshness;
+            });
+            setProductsList(localFiltered);
+          } else {
+            setProductsList(data);
+          }
+        } else {
+          throw new Error('API failed');
         }
       } catch (err) {
-        console.error('Error fetching products:', err);
+        console.error('Error fetching products, falling back to mock:', err);
+        const localFiltered = mockProducts.filter((p) => {
+          const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+          const matchCategory = category === 'all' || p.category === category;
+          const matchLocation = location === 'All India' || p.state === location;
+          const matchFreshness = freshness === 'all' || p.freshness === freshness;
+          return matchSearch && matchCategory && matchLocation && matchFreshness;
+        });
+        setProductsList(localFiltered);
       } finally {
         setLoading(false);
       }

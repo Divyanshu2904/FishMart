@@ -9,6 +9,7 @@ import { useCart } from "@/context/CartContext";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { products as mockProducts } from "@/data/products";
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -27,9 +28,24 @@ const ProductDetail = () => {
         if (res.ok) {
           const data = await res.json();
           setProduct(data);
+        } else {
+          throw new Error('API failed');
         }
       } catch (err) {
-        console.error('Error fetching product details:', err);
+        console.error('Error fetching product details, falling back to mock:', err);
+        const localProd = mockProducts.find(p => p.id === productId);
+        if (localProd) {
+          const fallbackSeller = {
+            id: localProd.sellerId || "s1",
+            name: "Bengal Fresh Fish",
+            rating: 4.8,
+            verified: true
+          };
+          setProduct({
+            ...localProd,
+            seller: localProd.seller || fallbackSeller
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -172,7 +188,7 @@ const ProductDetail = () => {
 
             {/* Seller Info */}
             <Link
-              to={`/seller/seller-${(parseInt(product.seller.id.replace("s", "")) % 4) + 1}`}
+              to={`/seller/seller-${(parseInt(product.seller.id.toString().replace("s", "")) % 4) + 1}`}
               className="glass-card p-4 flex items-center justify-between hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3">

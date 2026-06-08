@@ -18,6 +18,8 @@ import { ProductCard } from "@/components/products/ProductCard";
 import { ReviewsSection } from "@/components/reviews/ReviewsSection";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { getSellerById } from "@/data/sellers";
+import { products as mockProducts } from "@/data/products";
 
 const SellerProfile = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
@@ -33,9 +35,21 @@ const SellerProfile = () => {
         if (res.ok) {
           const data = await res.json();
           setSeller(data);
+        } else {
+          throw new Error('API failed');
         }
       } catch (err) {
-        console.error('Error fetching seller profile:', err);
+        console.error('Error fetching seller profile, falling back to mock:', err);
+        const localSeller = getSellerById(sellerId || "");
+        if (localSeller) {
+          // Filter products for this seller (mock: assign products based on seller index)
+          const sellerIndex = parseInt(sellerId?.split("-")[1] || "1") - 1;
+          const matchingProducts = mockProducts.filter((_, index) => index % 4 === sellerIndex);
+          setSeller({
+            ...localSeller,
+            products: matchingProducts
+          });
+        }
       } finally {
         setLoading(false);
       }

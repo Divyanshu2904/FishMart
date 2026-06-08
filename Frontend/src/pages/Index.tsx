@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '@/components/products/ProductCard';
+import { products as mockProducts } from '@/data/products';
 
 const HeroSection = () => (
   <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/5 via-secondary/5 to-aqua-light/10">
@@ -80,9 +81,21 @@ const FeaturedProducts = () => {
 
   useEffect(() => {
     fetch('http://localhost:5000/api/products')
-      .then((res) => res.json())
-      .then((data) => setProductsList(data.slice(0, 8)))
-      .catch((err) => console.error('Error fetching featured products:', err));
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
+      .then((data) => {
+        if (data.length === 0) {
+          setProductsList(mockProducts.slice(0, 8));
+        } else {
+          setProductsList(data.slice(0, 8));
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching featured products, falling back to mock:', err);
+        setProductsList(mockProducts.slice(0, 8));
+      });
   }, []);
 
   return (
