@@ -21,7 +21,7 @@ router.post('/signup', async (req, res) => {
 
   try {
     // Check if user exists
-    const existingUser = await get('SELECT * FROM users WHERE email = ?', [email]);
+    const existingUser = await get('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
@@ -36,11 +36,11 @@ router.post('/signup', async (req, res) => {
     const rating = role === 'seller' ? 5.0 : null;
 
     const result = await run(
-      'INSERT INTO users (name, email, password, role, rating, verified) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO users (name, email, password, role, rating, verified) VALUES ($1, $2, $3, $4, $5, $6)',
       [name, email, hashedPassword, role, rating, verified]
     );
 
-    const newUser = await get('SELECT id, name, email, role, rating, verified FROM users WHERE id = ?', [result.id]);
+    const newUser = await get('SELECT id, name, email, role, rating, verified FROM users WHERE id = $1', [result.id]);
 
     // Create JWT
     const token = jwt.sign(
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
 
   try {
     // Check for user
-    const user = await get('SELECT * FROM users WHERE email = ?', [email]);
+    const user = await get('SELECT * FROM users WHERE email = $1', [email]);
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -116,7 +116,7 @@ router.post('/login', async (req, res) => {
 // @desc    Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await get('SELECT id, name, email, role, rating, verified FROM users WHERE id = ?', [req.user.id]);
+    const user = await get('SELECT id, name, email, role, rating, verified FROM users WHERE id = $1', [req.user.id]);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

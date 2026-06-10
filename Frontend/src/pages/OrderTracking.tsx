@@ -28,6 +28,8 @@ const statusIcons = {
   "Delivered": Home,
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const OrderTracking = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryOrderId = searchParams.get("orderId") || "";
@@ -43,7 +45,7 @@ const OrderTracking = () => {
     setError("");
     setIsTracking(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/track/${id}`);
+      const res = await fetch(`${API_BASE}/api/orders/track/${id}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || "Order not found");

@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { products as mockProducts } from "@/data/products";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any | null>(null);
@@ -22,7 +24,7 @@ const ProductDetail = () => {
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/product/${productId}`);
+      const res = await fetch(`${API_BASE}/api/reviews/product/${productId}`);
       if (res.ok) {
         const data = await res.json();
         setReviewsList(data);
@@ -41,7 +43,7 @@ const ProductDetail = () => {
       
       const loadProductData = async (lat?: number, lon?: number) => {
         try {
-          let url = `http://localhost:5000/api/products/${productId}`;
+          let url = `${API_BASE}/api/products/${productId}`;
           if (lat !== undefined && lon !== undefined) {
             url += `?userLat=${lat}&userLon=${lon}`;
           }
@@ -254,7 +256,7 @@ const ProductDetail = () => {
 
             {/* Seller Info */}
             <Link
-              to={`/seller/seller-${(parseInt(product.seller.id.toString().replace("s", "")) % 4) + 1}`}
+              to={`/seller/${product.seller.id}`}
               className="glass-card p-4 flex items-center justify-between hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3">

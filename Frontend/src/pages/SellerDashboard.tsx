@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const SellerDashboard = () => {
   const { user, token, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -37,6 +39,9 @@ const SellerDashboard = () => {
   const [prodImage, setProdImage] = useState('');
   const [prodLocation, setProdLocation] = useState('');
   const [prodState, setProdState] = useState('');
+  const [prodLatitude, setProdLatitude] = useState('');
+  const [prodLongitude, setProdLongitude] = useState('');
+  const [prodDeliveryRadius, setProdDeliveryRadius] = useState('100');
   const [prodFreshness, setProdFreshness] = useState('fresh');
   const [prodCategory, setProdCategory] = useState('freshwater');
   const [prodDescription, setProdDescription] = useState('');
@@ -53,6 +58,9 @@ const SellerDashboard = () => {
   const [editImage, setEditImage] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editState, setEditState] = useState('');
+  const [editLatitude, setEditLatitude] = useState('');
+  const [editLongitude, setEditLongitude] = useState('');
+  const [editDeliveryRadius, setEditDeliveryRadius] = useState('100');
   const [editFreshness, setEditFreshness] = useState('fresh');
   const [editCategory, setEditCategory] = useState('freshwater');
   const [editDescription, setEditDescription] = useState('');
@@ -71,7 +79,7 @@ const SellerDashboard = () => {
     setIsUploadingImage(true);
     try {
       const uploadToken = token || localStorage.getItem('token') || '';
-      const res = await fetch('http://localhost:5000/api/upload', {
+      const res = await fetch(`${API_BASE}/api/upload`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${uploadToken}`
@@ -107,7 +115,7 @@ const SellerDashboard = () => {
   const fetchListings = async () => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:5000/api/seller/listings', {
+      const res = await fetch(`${API_BASE}/api/seller/listings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -130,13 +138,13 @@ const SellerDashboard = () => {
     setLoading(true);
     try {
       // Fetch stats
-      const statsRes = await fetch('http://localhost:5000/api/seller/stats', {
+      const statsRes = await fetch(`${API_BASE}/api/seller/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const statsData = await statsRes.json();
       
       // Fetch orders
-      const ordersRes = await fetch('http://localhost:5000/api/seller/orders', {
+      const ordersRes = await fetch(`${API_BASE}/api/seller/orders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const ordersData = await ordersRes.json();
@@ -209,6 +217,9 @@ const SellerDashboard = () => {
     setEditWeight(product.weight || '');
     setEditLocation(product.location);
     setEditState(product.state);
+    setEditLatitude(product.latitude ? product.latitude.toString() : '');
+    setEditLongitude(product.longitude ? product.longitude.toString() : '');
+    setEditDeliveryRadius(product.deliveryRadius ? product.deliveryRadius.toString() : '100');
     setEditFreshness(product.freshness);
     setEditCategory(product.category);
     setEditDescription(product.description || '');
@@ -230,6 +241,9 @@ const SellerDashboard = () => {
         image: editImage,
         location: editLocation,
         state: editState,
+        latitude: editLatitude !== '' ? parseFloat(editLatitude) : undefined,
+        longitude: editLongitude !== '' ? parseFloat(editLongitude) : undefined,
+        deliveryRadius: editDeliveryRadius !== '' ? parseInt(editDeliveryRadius) : 100,
         freshness: editFreshness,
         category: editCategory,
         description: editDescription,
@@ -237,7 +251,7 @@ const SellerDashboard = () => {
         inStock: editInStock
       };
 
-      const res = await fetch(`http://localhost:5000/api/products/${editingProduct.id}`, {
+      const res = await fetch(`${API_BASE}/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +295,7 @@ const SellerDashboard = () => {
   const handleDeleteProduct = async (productId: string) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
+      const res = await fetch(`${API_BASE}/api/products/${productId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -319,13 +333,16 @@ const SellerDashboard = () => {
         image: prodImage || undefined,
         location: prodLocation,
         state: prodState,
+        latitude: prodLatitude !== '' ? parseFloat(prodLatitude) : undefined,
+        longitude: prodLongitude !== '' ? parseFloat(prodLongitude) : undefined,
+        deliveryRadius: prodDeliveryRadius !== '' ? parseInt(prodDeliveryRadius) : 100,
         freshness: prodFreshness,
         category: prodCategory,
         description: prodDescription,
         weight: prodWeight || undefined
       };
 
-      const res = await fetch('http://localhost:5000/api/products', {
+      const res = await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -349,6 +366,9 @@ const SellerDashboard = () => {
       setProdImage('');
       setProdLocation('');
       setProdState('');
+      setProdLatitude('');
+      setProdLongitude('');
+      setProdDeliveryRadius('100');
       setProdDescription('');
       setProdWeight('');
       // Refresh dashboard data
@@ -362,7 +382,7 @@ const SellerDashboard = () => {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/seller/orders/${orderId}/status`, {
+      const res = await fetch(`${API_BASE}/api/seller/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -453,6 +473,21 @@ const SellerDashboard = () => {
                     <div>
                       <Label htmlFor="state">State *</Label>
                       <Input id="state" placeholder="e.g. West Bengal, Goa" value={prodState} onChange={e => setProdState(e.target.value)} required disabled={isCreating} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="latitude">Latitude (optional)</Label>
+                      <Input id="latitude" placeholder="e.g. 22.5726" value={prodLatitude} onChange={e => setProdLatitude(e.target.value)} disabled={isCreating} />
+                    </div>
+                    <div>
+                      <Label htmlFor="longitude">Longitude (optional)</Label>
+                      <Input id="longitude" placeholder="e.g. 88.3639" value={prodLongitude} onChange={e => setProdLongitude(e.target.value)} disabled={isCreating} />
+                    </div>
+                    <div>
+                      <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
+                      <Input id="deliveryRadius" type="number" placeholder="100" value={prodDeliveryRadius} onChange={e => setProdDeliveryRadius(e.target.value)} disabled={isCreating} />
                     </div>
                   </div>
 
@@ -563,6 +598,21 @@ const SellerDashboard = () => {
                     <div>
                       <Label htmlFor="editState">State *</Label>
                       <Input id="editState" placeholder="e.g. West Bengal, Goa" value={editState} onChange={e => setEditState(e.target.value)} required disabled={isUpdating} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="editLatitude">Latitude (optional)</Label>
+                      <Input id="editLatitude" placeholder="e.g. 22.5726" value={editLatitude} onChange={e => setEditLatitude(e.target.value)} disabled={isUpdating} />
+                    </div>
+                    <div>
+                      <Label htmlFor="editLongitude">Longitude (optional)</Label>
+                      <Input id="editLongitude" placeholder="e.g. 88.3639" value={editLongitude} onChange={e => setEditLongitude(e.target.value)} disabled={isUpdating} />
+                    </div>
+                    <div>
+                      <Label htmlFor="editDeliveryRadius">Delivery Radius (km)</Label>
+                      <Input id="editDeliveryRadius" type="number" placeholder="100" value={editDeliveryRadius} onChange={e => setEditDeliveryRadius(e.target.value)} disabled={isUpdating} />
                     </div>
                   </div>
 

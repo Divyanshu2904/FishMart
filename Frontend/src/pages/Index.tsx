@@ -7,6 +7,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ProductCard } from '@/components/products/ProductCard';
 import { products as mockProducts } from '@/data/products';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const HeroSection = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -99,7 +101,7 @@ const FeaturedProducts = () => {
   const [productsList, setProductsList] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
+    fetch(`${API_BASE}/api/products`)
       .then((res) => {
         if (!res.ok) throw new Error('API error');
         return res.json();

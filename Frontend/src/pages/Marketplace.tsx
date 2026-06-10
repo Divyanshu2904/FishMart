@@ -86,7 +86,8 @@ const Marketplace = () => {
           queryParams.append('nearMe', 'true');
         }
 
-        const res = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_BASE}/api/products?${queryParams.toString()}`);
         if (res.ok) {
           const data = await res.json();
           if (data && typeof data === 'object' && !Array.isArray(data)) {

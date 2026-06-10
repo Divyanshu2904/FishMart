@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { token } = useAuth();
@@ -69,7 +71,7 @@ const Checkout = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch('http://localhost:5000/api/orders/checkout', {
+      const res = await fetch(`${API_BASE}/api/orders/checkout`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),

@@ -14,6 +14,10 @@ const formatProduct = (row) => ({
   image: row.image,
   location: row.location,
   state: row.state,
+  latitude: row.latitude,
+  longitude: row.longitude,
+  deliveryRadius: row.delivery_radius_km,
+  deliveryAvailable: row.delivery_available,
   freshness: row.freshness,
   seller: {
     id: 's' + row.seller_id,
@@ -35,19 +39,19 @@ router.get('/stats', sellerAuth, async (req, res) => {
 
     // Active listings count
     const activeListingsRes = await get(
-      'SELECT COUNT(*) as count FROM products WHERE seller_id = ?',
+      'SELECT COUNT(*) as count FROM products WHERE seller_id = $1',
       [sellerId]
     );
 
     // Total orders count
     const totalOrdersRes = await get(
-      'SELECT COUNT(DISTINCT order_id) as count FROM order_items WHERE seller_id = ?',
+      'SELECT COUNT(DISTINCT order_id) as count FROM order_items WHERE seller_id = $1',
       [sellerId]
     );
 
     // Total revenue sum
     const totalRevenueRes = await get(
-      'SELECT SUM(price * quantity) as total FROM order_items WHERE seller_id = ?',
+      'SELECT SUM(price * quantity) as total FROM order_items WHERE seller_id = $1',
       [sellerId]
     );
 
@@ -77,7 +81,7 @@ router.get('/orders', sellerAuth, async (req, res) => {
       `SELECT DISTINCT o.id, o.order_number, o.first_name, o.last_name, o.status, o.total_price
        FROM orders o
        JOIN order_items oi ON o.id = oi.order_id
-       WHERE oi.seller_id = ?
+       WHERE oi.seller_id = $1
        ORDER BY o.created_at DESC`,
       [sellerId]
     );
@@ -87,7 +91,7 @@ router.get('/orders', sellerAuth, async (req, res) => {
     for (const order of ordersRes) {
       // Get the items belonging to this seller in this order
       const items = await query(
-        'SELECT name, quantity, price FROM order_items WHERE order_id = ? AND seller_id = ?',
+        'SELECT name, quantity, price FROM order_items WHERE order_id = $1 AND seller_id = $2',
         [order.id, sellerId]
       );
 
@@ -128,14 +132,14 @@ router.put('/orders/:orderNumber/status', sellerAuth, async (req, res) => {
 
   try {
     // Verify that the order exists
-    const order = await get('SELECT * FROM orders WHERE order_number = ?', [orderNumber]);
+    const order = await get('SELECT * FROM orders WHERE order_number = $1', [orderNumber]);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
     // Verify that the seller has items in this order
     const sellerItem = await get(
-      'SELECT id FROM order_items WHERE order_id = ? AND seller_id = ? LIMIT 1',
+      'SELECT id FROM order_items WHERE order_id = $1 AND seller_id = $2 LIMIT 1',
       [order.id, req.user.id]
     );
 
@@ -144,7 +148,7 @@ router.put('/orders/:orderNumber/status', sellerAuth, async (req, res) => {
     }
 
     // Update order status
-    await run('UPDATE orders SET status = ? WHERE id = ?', [lowercaseStatus, order.id]);
+    await run('UPDATE orders SET status = $1 WHERE id = $2', [lowercaseStatus, order.id]);
 
     res.json({ message: 'Order status updated successfully', status: lowercaseStatus });
   } catch (err) {
@@ -161,7 +165,7 @@ router.get('/profile/:sellerId', async (req, res) => {
 
   try {
     const seller = await get(
-      'SELECT id, name, email, rating, verified, created_at FROM users WHERE id = ? AND role = ?',
+      'SELECT id, name, email, rating, verified, created_at FROM users WHERE id = $1 AND role = $2',
       [parsedId, 'seller']
     );
 
@@ -174,7 +178,7 @@ router.get('/profile/:sellerId', async (req, res) => {
       `SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
        FROM products p
        JOIN users u ON p.seller_id = u.id
-       WHERE p.seller_id = ?`,
+       WHERE p.seller_id = $1`,
       [seller.id]
     );
 
@@ -241,7 +245,7 @@ router.get('/listings', sellerAuth, async (req, res) => {
       `SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
        FROM products p
        JOIN users u ON p.seller_id = u.id
-       WHERE p.seller_id = ?`,
+       WHERE p.seller_id = $1`,
       [req.user.id]
     );
 

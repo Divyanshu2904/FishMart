@@ -19,6 +19,8 @@ interface ReviewsSectionProps {
   onReviewAdded?: () => void;
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export const ReviewsSection = ({ reviews, type, targetId, targetName, onReviewAdded }: ReviewsSectionProps) => {
   const [showForm, setShowForm] = useState(false);
   const [sortBy, setSortBy] = useState("recent");
@@ -68,7 +70,7 @@ export const ReviewsSection = ({ reviews, type, targetId, targetName, onReviewAd
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${type}/${targetId}`, {
+      const res = await fetch(`${API_BASE}/api/reviews/${type}/${targetId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

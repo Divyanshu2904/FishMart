@@ -12,6 +12,29 @@ const generateOrderNumber = () => {
   return `FM-${year}-${rand}`;
 };
 
+// @route   GET api/orders/my-orders
+// @desc    Get orders placed by current user
+router.get('/my-orders', auth, async (req, res) => {
+  try {
+    const orders = await query(
+      `SELECT o.id, o.order_number, o.status, o.total_price, o.created_at,
+       json_agg(json_build_object(
+         'name', oi.name, 'quantity', oi.quantity, 'price', oi.price
+       )) as items
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.buyer_id = $1
+       GROUP BY o.id, o.order_number, o.status, o.total_price, o.created_at
+       ORDER BY o.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST api/orders/checkout
 // @desc    Place an order
 router.post('/checkout', async (req, res) => {
@@ -33,7 +56,7 @@ router.post('/checkout', async (req, res) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkeyforfishmart');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkeyforfishmart2024');
       buyerId = decoded.id;
     } catch (err) {
       // Ignore token error, proceed as guest
@@ -46,7 +69,7 @@ router.post('/checkout', async (req, res) => {
     const itemsToInsert = [];
 
     for (const item of items) {
-      const dbProd = await get('SELECT * FROM products WHERE id = ?', [item.product.id]);
+      const dbProd = await get('SELECT * FROM products WHERE id = $1', [item.product.id]);
       if (!dbProd) {
         return res.status(400).json({ message: `Product ${item.product.name} not found` });
       }
@@ -68,7 +91,7 @@ router.post('/checkout', async (req, res) => {
     // Insert order record
     const orderResult = await run(
       `INSERT INTO orders (order_number, buyer_id, status, first_name, last_name, address, city, state, pin_code, phone, total_price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [orderNumber, buyerId, 'placed', firstName, lastName, address, city, state, pinCode, phone, totalPrice]
     );
 
@@ -78,7 +101,7 @@ router.post('/checkout', async (req, res) => {
     for (const item of itemsToInsert) {
       await run(
         `INSERT INTO order_items (order_id, product_id, seller_id, name, price, quantity)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6)`,
         [orderId, item.productId, item.sellerId, item.name, item.price, item.quantity]
       );
     }
@@ -99,13 +122,13 @@ router.post('/checkout', async (req, res) => {
 // @desc    Get order status and details by order number
 router.get('/track/:orderNumber', async (req, res) => {
   try {
-    const order = await get('SELECT * FROM orders WHERE order_number = ?', [req.params.orderNumber]);
+    const order = await get('SELECT * FROM orders WHERE order_number = $1', [req.params.orderNumber]);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
     const items = await query(
-      `SELECT name, price, quantity FROM order_items WHERE order_id = ?`,
+      `SELECT name, price, quantity FROM order_items WHERE order_id = $1`,
       [order.id]
     );
 

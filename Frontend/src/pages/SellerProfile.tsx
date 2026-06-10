@@ -21,6 +21,8 @@ import { Loader2 } from "lucide-react";
 import { getSellerById } from "@/data/sellers";
 import { products as mockProducts } from "@/data/products";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 const SellerProfile = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
   const [seller, setSeller] = useState<any | null>(null);
@@ -29,7 +31,7 @@ const SellerProfile = () => {
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/seller/${sellerId}`);
+      const res = await fetch(`${API_BASE}/api/reviews/seller/${sellerId}`);
       if (res.ok) {
         const data = await res.json();
         setReviewsList(data);
@@ -46,7 +48,7 @@ const SellerProfile = () => {
     const fetchSellerProfile = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/seller/profile/${sellerId}`);
+        const res = await fetch(`${API_BASE}/api/seller/profile/${sellerId}`);
         if (res.ok) {
           const data = await res.json();
           setSeller(data);

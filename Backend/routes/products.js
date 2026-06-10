@@ -34,10 +34,19 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 const formatProduct = (row, userLat, userLon) => {
   let distance = undefined;
   if (userLat && userLon) {
-    const loc = (row.location || '').toLowerCase().trim();
-    const coords = locationCoordinates[loc] || locationCoordinates['mumbai']; // default fallback
-    distance = calculateDistance(userLat, userLon, coords.lat, coords.lon);
+    let pLat = row.latitude;
+    let pLon = row.longitude;
+    if (pLat === null || pLat === undefined || pLon === null || pLon === undefined) {
+      const loc = (row.location || '').toLowerCase().trim();
+      const coords = locationCoordinates[loc] || locationCoordinates['mumbai']; // default fallback
+      pLat = coords.lat;
+      pLon = coords.lon;
+    }
+    distance = calculateDistance(userLat, userLon, pLat, pLon);
   }
+
+  const deliveryRadius = row.delivery_radius_km !== undefined && row.delivery_radius_km !== null ? row.delivery_radius_km : 100;
+  const deliveryAvailable = distance !== undefined ? (distance <= deliveryRadius) : true;
 
   return {
     id: row.id.toString(),
@@ -48,6 +57,10 @@ const formatProduct = (row, userLat, userLon) => {
     image: row.image,
     location: row.location,
     state: row.state,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    deliveryRadius,
+    deliveryAvailable,
     freshness: row.freshness,
     seller: {
       id: 's' + row.seller_id,
@@ -72,37 +85,38 @@ router.get('/', async (req, res) => {
     SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
     FROM products p
     JOIN users u ON p.seller_id = u.id
-    WHERE 1=1
+    WHERE p.in_stock = 1
   `;
   const params = [];
+  let idx = 1;
 
   if (category && category !== 'all') {
-    sql += ' AND p.category = ?';
+    sql += ` AND p.category = $${idx++}`;
     params.push(category);
   }
 
   if (freshness && freshness !== 'all') {
-    sql += ' AND p.freshness = ?';
+    sql += ` AND p.freshness = $${idx++}`;
     params.push(freshness);
   }
 
   if (state && state !== 'All India') {
-    sql += ' AND (p.state = ? OR p.location = ?)';
+    sql += ` AND (p.state = $${idx++} OR p.location = $${idx++})`;
     params.push(state, state);
   }
 
   if (search) {
-    sql += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+    sql += ` AND (p.name ILIKE $${idx++} OR p.description ILIKE $${idx++})`;
     params.push(`%${search}%`, `%${search}%`);
   }
 
   if (minPrice) {
-    sql += ' AND p.price >= ?';
+    sql += ` AND p.price >= $${idx++}`;
     params.push(parseFloat(minPrice));
   }
 
   if (maxPrice) {
-    sql += ' AND p.price <= ?';
+    sql += ` AND p.price <= $${idx++}`;
     params.push(parseFloat(maxPrice));
   }
 
@@ -149,7 +163,7 @@ router.get('/:id', async (req, res) => {
       `SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
        FROM products p
        JOIN users u ON p.seller_id = u.id
-       WHERE p.id = ?`,
+       WHERE p.id = $1`,
       [req.params.id]
     );
 
@@ -169,7 +183,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST api/products
 // @desc    Create a product (Sellers only)
 router.post('/', sellerAuth, async (req, res) => {
-  const { name, scientificName, price, unit, image, location, state, freshness, category, description, weight } = req.body;
+  const { name, scientificName, price, unit, image, location, state, latitude, longitude, deliveryRadius, freshness, category, description, weight } = req.body;
 
   if (!name || !price || !location || !state || !freshness || !category) {
     return res.status(400).json({ message: 'Please enter all required fields' });
@@ -177,16 +191,19 @@ router.post('/', sellerAuth, async (req, res) => {
 
   try {
     const result = await run(
-      `INSERT INTO products (name, scientific_name, price, unit, image, location, state, freshness, category, description, weight, seller_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (name, scientific_name, price, unit, image, location, state, latitude, longitude, delivery_radius_km, freshness, category, description, weight, seller_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         name,
         scientificName || null,
-        price,
+        parseFloat(price),
         unit || 'kg',
         image || 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&h=300&fit=crop',
         location,
         state,
+        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : null,
+        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : null,
+        deliveryRadius !== undefined && deliveryRadius !== '' ? parseInt(deliveryRadius) : 100,
         freshness,
         category,
         description || '',
@@ -199,7 +216,7 @@ router.post('/', sellerAuth, async (req, res) => {
       `SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
        FROM products p
        JOIN users u ON p.seller_id = u.id
-       WHERE p.id = ?`,
+       WHERE p.id = $1`,
       [result.id]
     );
 
@@ -213,11 +230,11 @@ router.post('/', sellerAuth, async (req, res) => {
 // @route   PUT api/products/:id
 // @desc    Update a product (Owner seller only)
 router.put('/:id', sellerAuth, async (req, res) => {
-  const { name, scientificName, price, unit, image, location, state, freshness, category, description, weight, inStock } = req.body;
+  const { name, scientificName, price, unit, image, location, state, latitude, longitude, deliveryRadius, freshness, category, description, weight, inStock } = req.body;
 
   try {
     // Check ownership
-    const product = await get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    const product = await get('SELECT * FROM products WHERE id = $1', [req.params.id]);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -230,16 +247,19 @@ router.put('/:id', sellerAuth, async (req, res) => {
 
     await run(
       `UPDATE products
-       SET name = ?, scientific_name = ?, price = ?, unit = ?, image = ?, location = ?, state = ?, freshness = ?, category = ?, description = ?, weight = ?, in_stock = ?
-       WHERE id = ?`,
+       SET name = $1, scientific_name = $2, price = $3, unit = $4, image = $5, location = $6, state = $7, latitude = $8, longitude = $9, delivery_radius_km = $10, freshness = $11, category = $12, description = $13, weight = $14, in_stock = $15
+       WHERE id = $16`,
       [
         name || product.name,
         scientificName !== undefined ? scientificName : product.scientific_name,
-        price !== undefined ? price : product.price,
+        price !== undefined ? parseFloat(price) : product.price,
         unit || product.unit,
         image || product.image,
         location || product.location,
         state || product.state,
+        latitude !== undefined && latitude !== '' ? parseFloat(latitude) : product.latitude,
+        longitude !== undefined && longitude !== '' ? parseFloat(longitude) : product.longitude,
+        deliveryRadius !== undefined && deliveryRadius !== '' ? parseInt(deliveryRadius) : product.delivery_radius_km,
         freshness || product.freshness,
         category || product.category,
         description !== undefined ? description : product.description,
@@ -253,7 +273,7 @@ router.put('/:id', sellerAuth, async (req, res) => {
       `SELECT p.*, u.name as seller_name, u.rating as seller_rating, u.verified as seller_verified
        FROM products p
        JOIN users u ON p.seller_id = u.id
-       WHERE p.id = ?`,
+       WHERE p.id = $1`,
       [req.params.id]
     );
 
@@ -269,7 +289,7 @@ router.put('/:id', sellerAuth, async (req, res) => {
 router.delete('/:id', sellerAuth, async (req, res) => {
   try {
     // Check ownership
-    const product = await get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    const product = await get('SELECT * FROM products WHERE id = $1', [req.params.id]);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -278,7 +298,7 @@ router.delete('/:id', sellerAuth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this listing' });
     }
 
-    await run('DELETE FROM products WHERE id = ?', [req.params.id]);
+    await run('DELETE FROM products WHERE id = $1', [req.params.id]);
     res.json({ message: 'Product listing deleted successfully' });
   } catch (err) {
     console.error(err);

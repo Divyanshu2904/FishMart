@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { initDB } from './db.js';
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
@@ -9,8 +9,7 @@ import sellerRoutes from './routes/seller.js';
 import uploadRoutes from './routes/upload.js';
 import reviewsRoutes from './routes/reviews.js';
 
-// Load Env
-dotenv.config();
+// Env initialized via import 'dotenv/config' at top
 
 const app = express();
 

@@ -62,7 +62,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
         <div className="flex items-center justify-between">
           <Link 
-            to={`/seller/seller-${(parseInt(product.seller.id.replace('s', '')) % 4) + 1}`}
+            to={`/seller/${product.seller.id}`}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-ocean-600 transition-colors"
           >
             <MapPin className="w-3.5 h-3.5" />
